@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata: 
+  name: cni
+  namespace: kube-system
+spec: 
+  selector: 
+    matchLabels: 
+      name: cni
+  template: 
+    metadata: 
+      labels: 
+        name: cni
+    spec: 
+      tolerations: 
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      hostNetwork: true
+      containers: 
+        - name: cni
+          image: docker.io/hamidrezakhosroabadi/cni:v1.0.1
+          env: 
+            - name: ETCD_HOST
+              value: 10.200.240.48
+            - name: CNI_VERSION
+              value: "1.0.0"
+            - name: CNI_NAME
+              value: "cni"
+            - name: CNI_TYPE
+              value: "cni"
+            - name: BRIDGE_NAME
+              value: "cni0"
+            - name: IP_SUBNET
+              value: "10.2.0.0/16"
+            - name: IP_SUBNET_MARGIN
+              value: "8"
+            - name: ETCD_PREFIX
+              value: "/hosts"
+            - name: ETCD_COUNTER_KEY
+              value: "/cni/counter"
+            - name: CNI_CONFIG_LOCATION
+              value: "/etc/cni/net.d/cni.conf"
+            - name: CNI_PLUGIN_LOCATION
+              value: "/opt/cni/bin/cni"
+          resources: 
+            limits: 
+              memory: 1Gi
+              cpu: 500m
+            requests: 
+              cpu: 100m
+              memory: 250Mi
+          volumeMounts: 
+            - name: config
+              mountPath: /etc/cni/net.d
+            - name: plugin
+              mountPath: /opt/cni/bin
+          securityContext: 
+            privileged: true
+      volumes: 
+        - name: config
+          hostPath: 
+            path: /etc/cni/net.d
+        - name: plugin
+          hostPath: 
+            path: /opt/cni/bin
+
